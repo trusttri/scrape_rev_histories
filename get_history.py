@@ -159,33 +159,34 @@ def get_original_title(archive_pageid):
 site = wiki.Wiki('https://en.wikipedia.org/w/api.php?')
 
 
-def get_revs_from_archives(archived_urls, open_comments, article_to_pageid):
+def get_revs_from_archives(archived_urls, open_comments, article_to_pageid, store_revs):
     count = 0
     stored_revs = {}
     stored_titles = {}
-    with open(save_path) as file:
-        stored_revs = json.load(file)
+    # with open(save_path) as file:
+    #     stored_revs = json.load(file)
     with open(title_path) as file:
         stored_titles = json.load(file)
 
     for arch_id in archived_urls:
-        if arch_id not in stored_revs.keys():
+        if arch_id not in stored_titles.keys():
             count += 1
             original_title = get_original_title(article_to_pageid[str(arch_id)])
             stored_titles[arch_id] = original_title
 
             if str(arch_id) in open_comments:
                 opendate = open_comments[str(arch_id)]
-                stored_revs[arch_id] =  get_all_revisions(original_title, opendate, "", {})
+                store_revs[arch_id] =  get_all_revisions(original_title, opendate, "", {})
             print arch_id
 
-            if count % 3 == 0:
-                with open(save_path, "w") as file:
-                    json.dump(stored_revs, file)
+            if count % 5 == 0:
+                with open(os.path.join(script_dir, 'stored_revs_'+arch_id+'.json'), "w") as file:
+                    json.dump(store_revs, file)
                 with open(title_path, 'w') as file:
                     json.dump(stored_titles, file)
+
     with open(save_path, "w") as file:
-        json.dump(stored_revs, file)
+        json.dump(store_revs, file)
     with open(title_path, 'w') as file:
         json.dump(stored_titles, file)
-    return stored_titles, stored_revs
+    return stored_titles, store_revs
