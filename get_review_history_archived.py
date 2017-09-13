@@ -17,6 +17,11 @@ script_dir = os.path.dirname(__file__)
 archived_url_path = os.path.join(script_dir, 'archived_urls.json')
 article_to_pageid_path = os.path.join(script_dir, 'article_to_pageid.json')
 open_comment_path = os.path.join(script_dir, "open_comments.json")
+title_path = os.path.join(script_dir, "original_titles.json")
+save_path = os.path.join(script_dir, 'stored_revs.json')
+print title_path
+
+
 #archived_urls, open_comments, article_to_pageid
 with open(archived_url_path) as file:
     archived_urls = json.load(file)
@@ -156,12 +161,31 @@ site = wiki.Wiki('https://en.wikipedia.org/w/api.php?')
 
 
 def get_revs_from_archives(archived_urls, open_comments, article_to_pageid, original_titles, archived_rfcs_history):
-    for arch_id in archived_urls:
-        original_title = get_original_title(article_to_pageid[str(arch_id)])
-        original_titles[arch_id] = original_title
+    count = 0
+    stored_revs = {}
 
-        if str(arch_id) in open_comments:
-            opendate = open_comments[str(arch_id)]
-            archived_rfcs_history[arch_id] =  get_all_revisions(original_title, opendate, "", {})
-        print arch_id
+    with open(save_path) as file:
+        stored_revs = json.load(file)
+
+
+    for arch_id in archived_urls:
+        if arch_id not in stored_revs.keys():
+            count += 1
+            original_title = get_original_title(article_to_pageid[str(arch_id)])
+            original_titles[arch_id] = original_title
+
+            if str(arch_id) in open_comments:
+                opendate = open_comments[str(arch_id)]
+                archived_rfcs_history[arch_id] =  get_all_revisions(original_title, opendate, "", {})
+            print arch_id
+
+            if count % 10 == 0:
+                with open(save_path, "w") as file:
+                    json.dump(archived_rfcs_history, file)
+                with open(title_path, 'w') as file:
+                    json.dump(original_titles, file)
+    with open(save_path, "w") as file:
+        json.dump(archived_rfcs_history, file)
+    with open(title_path, 'w') as file:
+        json.dump(original_titles, file)
     return original_titles, archived_rfcs_history
