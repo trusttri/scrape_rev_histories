@@ -177,6 +177,7 @@ def get_revs_from_archives(archived_urls, open_comments, article_to_pageid, stor
             if str(arch_id) in open_comments:
                 opendate = open_comments[str(arch_id)]
                 store_revs[arch_id] =  get_all_revisions(original_title, opendate, "", {})
+                print 'stored' + str(arch_id)
             print arch_id
 
             if count % 5 == 0:
