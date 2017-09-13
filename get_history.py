@@ -179,7 +179,7 @@ def get_revs_from_archives(archived_urls, open_comments, article_to_pageid):
                 stored_revs[arch_id] =  get_all_revisions(original_title, opendate, "", {})
             print arch_id
 
-            if count % 10 == 0:
+            if count % 3 == 0:
                 with open(save_path, "w") as file:
                     json.dump(stored_revs, file)
                 with open(title_path, 'w') as file:
