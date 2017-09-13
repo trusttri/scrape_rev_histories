@@ -10,8 +10,6 @@ from wikitools import wiki, api
 import re
 import datetime
 filterwarnings('ignore', category=mdb.Warning)
-pd.set_option('display.max_colwidth',600)
-
 
 script_dir = os.path.dirname(__file__)
 archived_url_path = os.path.join(script_dir, 'archived_urls.json')
@@ -130,20 +128,22 @@ def get_all_revisions(title, date, rvcontinue, page_revisions):
               'format':'json' }
     if rvcontinue != "":
         params["rvcontinue"] = rvcontinue
-#     try:
-    request = api.APIRequest(site, params)
-    all_result = request.query()
+    try:
+        request = api.APIRequest(site, params)
+        all_result = request.query()
 
-    query_result = all_result["query"]["pages"].values()[0]
-#     print all_result
-    if "revisions" in query_result:
-        revision_results = query_result["revisions"]
-        page_revisions = extract_revision_info(revision_results, page_revisions)
-    if "continue" in all_result:
-        revcon_param = all_result["continue"]["rvcontinue"]
-        return get_all_revisions(title, date, revcon_param, page_revisions)
-    else:
-        return page_revisions
+        query_result = all_result["query"]["pages"].values()[0]
+    #     print all_result
+        if "revisions" in query_result:
+            revision_results = query_result["revisions"]
+            page_revisions = extract_revision_info(revision_results, page_revisions)
+        if "continue" in all_result:
+            revcon_param = all_result["continue"]["rvcontinue"]
+            return get_all_revisions(title, date, revcon_param, page_revisions)
+        else:
+            return page_revisions
+    except api.APIError:
+        pass
 
 
 def get_original_title(archive_pageid):
@@ -160,32 +160,33 @@ def get_original_title(archive_pageid):
 site = wiki.Wiki('https://en.wikipedia.org/w/api.php?')
 
 
-def get_revs_from_archives(archived_urls, open_comments, article_to_pageid, original_titles, archived_rfcs_history):
+def get_revs_from_archives(archived_urls, open_comments, article_to_pageid):
     count = 0
     stored_revs = {}
-
+    stored_titles = {}
     with open(save_path) as file:
         stored_revs = json.load(file)
-
+    with open(title_path) as file:
+        stored_titles = json.load(file)
 
     for arch_id in archived_urls:
         if arch_id not in stored_revs.keys():
             count += 1
             original_title = get_original_title(article_to_pageid[str(arch_id)])
-            original_titles[arch_id] = original_title
+            stored_titles[arch_id] = original_title
 
             if str(arch_id) in open_comments:
                 opendate = open_comments[str(arch_id)]
-                archived_rfcs_history[arch_id] =  get_all_revisions(original_title, opendate, "", {})
+                stored_revs[arch_id] =  get_all_revisions(original_title, opendate, "", {})
             print arch_id
 
             if count % 10 == 0:
                 with open(save_path, "w") as file:
-                    json.dump(archived_rfcs_history, file)
+                    json.dump(stored_revs, file)
                 with open(title_path, 'w') as file:
-                    json.dump(original_titles, file)
+                    json.dump(stored_titles, file)
     with open(save_path, "w") as file:
-        json.dump(archived_rfcs_history, file)
+        json.dump(stored_revs, file)
     with open(title_path, 'w') as file:
-        json.dump(original_titles, file)
-    return original_titles, archived_rfcs_history
+        json.dump(stored_titles, file)
+    return stored_titles, stored_revs
