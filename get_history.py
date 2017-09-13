@@ -1,7 +1,6 @@
 # coding: utf-8
 import os
 import MySQLdb as mdb
-import pandas as pd
 import json
 import operator
 from contextlib import closing
